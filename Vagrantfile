@@ -36,6 +36,7 @@ Vagrant.configure("2") do |config|
     master.vm.provider "virtualbox" do |vb|
         vb.cpus = settings["nodes"]["control"]["cpu"]
         vb.memory = settings["nodes"]["control"]["memory"]
+        vb.gui = true
         if settings["cluster_name"] and settings["cluster_name"] != ""
           vb.customize ["modifyvm", :id, "--groups", ("/" + settings["cluster_name"])]
         end
