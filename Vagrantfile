@@ -16,6 +16,7 @@ Vagrant.configure("2") do |config|
       for i in `seq 1 ${NUM_WORKER_NODES}`; do
         echo "$IP_NW$((IP_START+i)) worker-node0${i}" >> /etc/hosts
       done
+      echo "$IP_NW$((IP_START+10)) ansible-node" >> /etc/hosts
   SHELL
 
   if `uname -m`.strip == "aarch64"
@@ -60,7 +61,6 @@ Vagrant.configure("2") do |config|
   end
 
   (1..NUM_WORKER_NODES).each do |i|
-
     config.vm.define "node0#{i}" do |node|
       node.vm.hostname = "worker-node0#{i}"
       node.vm.network "private_network", ip: IP_NW + "#{IP_START + i}"
@@ -91,6 +91,28 @@ Vagrant.configure("2") do |config|
         node.vm.provision "shell", path: "scripts/dashboard.sh"
       end
     end
-
   end
+
+  config.vm.define "ansible" do |ansible|
+    ansible.vm.hostname = "ansible-node"
+    ansible.vm.network "private_network", ip: settings["network"]["ansible_ip"]
+    if settings["shared_folders"]
+      settings["shared_folders"].each do |shared_folder|
+        ansible.vm.synced_folder shared_folder["host_path"], shared_folder["vm_path"]
+      end
+    end
+    ansible.vm.provider "virtualbox" do |vb|
+        vb.cpus = settings["nodes"]["ansible"]["cpu"]
+        vb.memory = settings["nodes"]["ansible"]["memory"]
+        vb.gui = true
+    end
+    ansible.vm.provision "shell",
+      env: {
+        "DNS_SERVERS" => settings["network"]["dns_servers"].join(" "),
+        "ENVIRONMENT" => settings["environment"],
+        "OS" => settings["software"]["os"]
+      },
+      path: "scripts/configure_ansible_host.sh"
+  end
+
 end 

@@ -1,0 +1,7 @@
+[kubernetes]
+master-node
+worker-node01
+
+[development]
+master-node
+worker-node01
